@@ -1,60 +1,92 @@
 package com.aurasoftwareinc.java.challenge1;
 
-import android.util.Base64;
 import android.util.Log;
 
+import com.aurasoftwareinc.java.challenge1.mapper.MappingAction;
+import com.aurasoftwareinc.java.challenge1.mapper.MappingActionByteObjectArray;
+import com.aurasoftwareinc.java.challenge1.mapper.MappingActionByteArrayType;
+import com.aurasoftwareinc.java.challenge1.mapper.MappingActionJsonMarshalType;
+import com.aurasoftwareinc.java.challenge1.mapper.MappingActionJsonType;
+import com.aurasoftwareinc.java.challenge1.mapper.MappingActionPrimitiveType;
+
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JsonMarshal
 {
     private static final String TAG = JsonMarshal.class.getName();
-    public static final List<? extends Class<? extends Serializable>> PRIM_TYPES = Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class, boolean.class, byte[].class);
 
-    public static final List<? extends Class<? extends Serializable>> PRIM_OBJ_TYPES = Arrays.asList(Byte.class, Short.class, Integer.class, Long.class, Float.class,
-            Double.class, Boolean.class, String.class, Byte[].class);
+    public static Map<Class<?>, MappingAction> MAP_ACTIONS = new HashMap<>();
 
+    /**
+     * Register a marshal type. A each class need to have a different marshal action
+     * A new class support need to implement a specific action.
+     */
+    public static void registerTypesIfNeeded(){
 
+        if(MAP_ACTIONS.isEmpty()){
+            //region byte types
+            MAP_ACTIONS.put(byte[].class, new MappingActionByteArrayType());
+            MAP_ACTIONS.put(Byte[].class, new MappingActionByteObjectArray());
+            //endregion
 
+            //region primitive type
+            MAP_ACTIONS.put(byte.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(short.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(int.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(long.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(float.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(double.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(boolean.class, new MappingActionPrimitiveType());
+            //endregion
+
+            //region primitive object type
+            MAP_ACTIONS.put(Byte.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Short.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Integer.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Long.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Float.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Double.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(String.class, new MappingActionPrimitiveType());
+            MAP_ACTIONS.put(Boolean.class, new MappingActionPrimitiveType());
+            //endregion
+
+            //region JSON object type
+            MAP_ACTIONS.put(JSONObject.class, new MappingActionJsonType());
+            MAP_ACTIONS.put(JSONArray.class, new MappingActionJsonType());
+            //endregion
+
+            //region JsonMarshalInterface type
+            MAP_ACTIONS.put(JSONTypes.class, new MappingActionJsonMarshalType());
+            MAP_ACTIONS.put(PrimitiveTypes.class, new MappingActionJsonMarshalType());
+            MAP_ACTIONS.put(SubclassTypes.class, new MappingActionJsonMarshalType());
+            MAP_ACTIONS.put(ObjectTypes.class, new MappingActionJsonMarshalType());
+            //endregion
+        }
+
+    }
+
+    /**
+     * Marshal a object by applying marshal for all its fields. Support fields type: primitive, JSONObject
+     * , JSONArrays and implemented JavaMarshalInterface. Ignore null field values.
+     * @param object The object to be marshaled
+     * @return A JSONObject marshal from the given object.
+     */
     public static JSONObject marshalJSON(Object object)
     {
-        //
-        // Todo: replace contents of this method with Your code.
-        //
+        registerTypesIfNeeded();
 
         JSONObject json = new JSONObject();
 
         try
         {
-            for (Field field:
-                    object.getClass().getDeclaredFields()) {
-
-                Log.d("mtest","Field " + field.getName() + " type " + field.getGenericType() + "  " + JSONTypes.class.getGenericSuperclass());
-                Field f = object.getClass().getDeclaredField(field.getName());
-                f.setAccessible(true);
-                if(byte[].class == field.getType()){
-                    byte[] byteValue = (byte[]) f.get(object);
-                    json.put(field.getName(), Base64.encodeToString(byteValue,Base64.DEFAULT));
-                } else if(Byte[].class == field.getType()){
-                    Byte[] byteValue = (Byte[]) f.get(object);
-                    json.put(field.getName(), Base64.encodeToString(convertByteArrayObjectToByteArray(byteValue),Base64.DEFAULT));
-                } else if(PRIM_TYPES.contains(field.getType()) || PRIM_OBJ_TYPES.contains(field.getType()) || JSONObject.class == field.getType() || JSONArray.class == field.getType()){
-                    json.put(field.getName(),f.get(object));
-                } else if(JsonMarshalInterface.class.isAssignableFrom(field.getType())){
-                    JsonMarshalInterface marshalInterfaceObject = (JsonMarshalInterface) f.get(object);
-                    //Recursive until get ready json
-                    json.put(field.getName(),marshalInterfaceObject.marshalJSON());
-                }
+            for (Field field: object.getClass().getDeclaredFields()) {
+                MappingAction action = (MappingAction) MAP_ACTIONS.get(field.getType());
+                json.put(field.getName(), action.marshalAction(field,object));
             }
         }
         catch (Exception ignore)
@@ -65,69 +97,29 @@ public class JsonMarshal
         return json;
     }
 
+    /**
+     * Parsing a JSONObject to fill up all fields for an input object
+     * , JSONArrays and implemented JavaMarshalInterface.
+     * @param object The object having fields to be filled with JSONObject values.
+     * @param json The JSONObject to be parsed.
+     * @return A parsing result - True if successful, otherwise false.
+     */
     public static boolean unmarshalJSON(Object object, JSONObject json)
     {
-        for (Field field:
-                object.getClass().getDeclaredFields()) {
-            try {
-                Object obj = json.get(field.getName());
-                boolean backupAccessibleValue = field.isAccessible();
-                if(obj != null){
-                    if(byte[].class == field.getType()) {
-                        field.setAccessible(true);
-                        field.set(object,Base64.decode(String.valueOf(obj),Base64.DEFAULT));
-                    } else if(Byte[].class == field.getType()){
-                        field.setAccessible(true);
-                        field.set(object,convertByteArrayToByteArrayObject(Base64.decode(String.valueOf(obj),Base64.DEFAULT)));
-                    } else if(PRIM_TYPES.contains(field.getType())){
-                        Log.d("mtst", "umarshall  PRIM_TYPES");
-                        field.setAccessible(true);
-                        field.set(object,obj);
-                    } else if(JSONObject.class == field.getType() || field.getType() == JSONArray.class || PRIM_OBJ_TYPES.contains(field.getType())){
-                        Log.d("mtst", "umarshall  JSONObject");
-                        field.setAccessible(true);
-                        field.set(object,field.getType().cast(obj));
-                    } else if(JsonMarshalInterface.class.isAssignableFrom(field.getType())) {
-                        field.setAccessible(true);
-                        JSONObject jsonObject = (JSONObject) obj;
-                        JsonMarshalInterface jsonMarshalInterfaceObject = (JsonMarshalInterface) field.getType().newInstance();
-                        jsonMarshalInterfaceObject.unmarshalJSON(jsonObject);
-                        field.set(object,jsonMarshalInterfaceObject);
-                    }
-                }
-                field.setAccessible(backupAccessibleValue);
-            } catch (JSONException e) {
-                Log.d("mtest",e.getLocalizedMessage());
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            }
+        registerTypesIfNeeded();
 
+        try {
+            for (Field field : object.getClass().getDeclaredFields()) {
+                MappingAction action = (MappingAction) MAP_ACTIONS.get(field.getType());
+                boolean backupAccessibleValue = field.isAccessible();
+                field.setAccessible(true);
+                field.set(object, action.unmarshalAction(field, json));
+                field.setAccessible(backupAccessibleValue);
+
+            }
+        } catch (IllegalAccessException exception) {
+            Log.d(TAG,exception.getLocalizedMessage());
         }
         return true;
-    }
-
-    private static byte[] convertByteArrayObjectToByteArray(Byte[] byteArrayObject){
-        if(byteArrayObject != null){
-            int length = byteArrayObject.length;
-            byte[] byteArray = new byte[length];
-            for(int i = 0; i< length; i++){
-                byteArray[i] = byteArrayObject[i].byteValue();
-            }
-            return byteArray;
-        }
-        return null;
-    }
-    private static Byte[] convertByteArrayToByteArrayObject(byte[] byteArray){
-        if(byteArray != null){
-            int length = byteArray.length;
-            Byte[] byteArrayObj = new Byte[length];
-            for(int i = 0; i< length; i++){
-                byteArrayObj[i] = byteArray[i];
-            }
-            return byteArrayObj;
-        }
-        return null;
     }
 }

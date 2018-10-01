@@ -1,5 +1,9 @@
 package com.aurasoftwareinc.java.challenge1.mapper;
 
+import com.aurasoftwareinc.java.challenge1.JsonMarshalInterface;
+import com.aurasoftwareinc.java.challenge1.ObjectTypes;
+
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.reflect.Field;
@@ -10,16 +14,45 @@ import java.lang.reflect.Field;
  * minhle.cse@gmail.com
  */
 public class MappingActionJsonType implements MappingAction {
+
+    /**
+     * Action to marshal a JSONObject value from the passing Object
+     * @param field The field to be marshaled
+     * @param mappingObject The object which can be extracted the field value
+     * @return A ready Object to add to JSONObject value or null if passing field is null
+     */
     @Override
-    public Object registerTypeObject(Field field, Object mappingObject) {
+    public Object marshalAction(Field field, Object mappingObject) {
+        boolean backupAccessibleValue = field.isAccessible();
         try {
-            Field f  = mappingObject.getClass().getDeclaredField(field.getName());
-            f.setAccessible(true);
-            JSONObject jsonObject = (JSONObject)f.get(mappingObject);
-            return jsonObject;
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            field.setAccessible(true);
+            Object fieldObject = field.get(mappingObject);
+            if(fieldObject != null) {
+                return field.getType().cast(fieldObject);
+            }
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        finally {
+            field.setAccessible(backupAccessibleValue);
+        }
+        return null;
+    }
+
+    /**
+     * Action to get a JSONObject or JSONArray from JSONObject to a specific object type
+     * @param field The field to be unmarshaled
+     * @param jsonObject The JSONObject which value to be unmarshed
+     * @return An object with parsed value and relevant types or null if JSONObject doesn't contain any key as field name
+     */
+    @Override
+    public Object unmarshalAction(Field field, JSONObject jsonObject) {
+        try {
+            String fieldName = field.getName();
+            if(jsonObject.has(fieldName)){
+                return field.getType().cast(jsonObject.get(fieldName));
+            }
+        } catch (JSONException e) {
             e.printStackTrace();
         }
         return null;
