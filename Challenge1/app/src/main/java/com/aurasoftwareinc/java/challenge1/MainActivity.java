@@ -9,6 +9,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONObject;
 
@@ -129,6 +130,12 @@ public class MainActivity extends Activity
             //
             // Both text views should now contain identical content.
             //
+            if(text1.getText().equals(text2.getText())){
+                Toast.makeText(this,"Matched", Toast.LENGTH_LONG).show();
+            }
+            else{
+                Toast.makeText(this,"Not Match", Toast.LENGTH_LONG).show();
+            }
         }
         catch (Exception ex)
         {
