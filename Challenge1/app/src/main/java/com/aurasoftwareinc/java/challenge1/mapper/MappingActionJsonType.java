@@ -1,5 +1,7 @@
 package com.aurasoftwareinc.java.challenge1.mapper;
 
+import android.util.Log;
+
 import com.aurasoftwareinc.java.challenge1.JsonMarshalInterface;
 import com.aurasoftwareinc.java.challenge1.ObjectTypes;
 
@@ -14,6 +16,8 @@ import java.lang.reflect.Field;
  * minhle.cse@gmail.com
  */
 public class MappingActionJsonType implements MappingAction {
+
+    private final String TAG = MappingActionJsonType.class.getName();
 
     /**
      * Action to marshal a JSONObject value from the passing Object
@@ -31,7 +35,7 @@ public class MappingActionJsonType implements MappingAction {
                 return field.getType().cast(fieldObject);
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         finally {
             field.setAccessible(backupAccessibleValue);
@@ -53,7 +57,7 @@ public class MappingActionJsonType implements MappingAction {
                 return field.getType().cast(jsonObject.get(fieldName));
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         return null;
     }

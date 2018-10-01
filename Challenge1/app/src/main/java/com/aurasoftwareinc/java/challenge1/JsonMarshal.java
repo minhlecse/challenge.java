@@ -20,7 +20,7 @@ public class JsonMarshal
 {
     private static final String TAG = JsonMarshal.class.getName();
 
-    public static Map<Class<?>, MappingAction> MAP_ACTIONS = new HashMap<>();
+    private static final Map<Class<?>, MappingAction> MAP_ACTIONS = new HashMap<>();
 
     /**
      * Register a marshal type. A each class need to have a different marshal action
@@ -85,7 +85,7 @@ public class JsonMarshal
         try
         {
             for (Field field: object.getClass().getDeclaredFields()) {
-                MappingAction action = (MappingAction) MAP_ACTIONS.get(field.getType());
+                MappingAction action = MAP_ACTIONS.get(field.getType());
                 json.put(field.getName(), action.marshalAction(field,object));
             }
         }
@@ -110,7 +110,7 @@ public class JsonMarshal
 
         try {
             for (Field field : object.getClass().getDeclaredFields()) {
-                MappingAction action = (MappingAction) MAP_ACTIONS.get(field.getType());
+                MappingAction action = MAP_ACTIONS.get(field.getType());
                 boolean backupAccessibleValue = field.isAccessible();
                 field.setAccessible(true);
                 field.set(object, action.unmarshalAction(field, json));

@@ -15,6 +15,8 @@ import java.lang.reflect.Field;
  */
 public class MappingActionByteObjectArray implements MappingAction {
 
+    private final String TAG = MappingActionByteObjectArray.class.getName();
+
     /**
      * Action to marshal a Byte[] value to a Base64String which accepted by JSONObject
      * @param field The field to be marshaled
@@ -32,7 +34,7 @@ public class MappingActionByteObjectArray implements MappingAction {
                 return Base64.encodeToString(Utils.convertByteArrayObjectToByteArray(byteValue), Base64.DEFAULT);
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         finally {
             field.setAccessible(backupAccessibleValue);
@@ -56,7 +58,7 @@ public class MappingActionByteObjectArray implements MappingAction {
                 return Utils.convertByteArrayToByteArrayObject(Base64.decode(String.valueOf(fieldObj),Base64.DEFAULT));
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         return null;
 

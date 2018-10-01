@@ -1,6 +1,7 @@
 package com.aurasoftwareinc.java.challenge1.mapper;
 
 import android.util.Base64;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +14,8 @@ import java.lang.reflect.Field;
  * minhle.cse@gmail.com
  */
 public class MappingActionByteArrayType implements MappingAction {
+
+    private final String TAG = MappingActionByteArrayType.class.getName();
 
     /**
      * Action to marshal a byte[] value to a Base64String which accepted by JSONObject
@@ -31,7 +34,7 @@ public class MappingActionByteArrayType implements MappingAction {
                 return Base64.encodeToString((byte[]) fieldObject, Base64.DEFAULT);
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         finally {
             field.setAccessible(backupAccessibleValue);
@@ -55,7 +58,7 @@ public class MappingActionByteArrayType implements MappingAction {
                 return Base64.decode(String.valueOf(fieldObj),Base64.DEFAULT);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         return null;
     }

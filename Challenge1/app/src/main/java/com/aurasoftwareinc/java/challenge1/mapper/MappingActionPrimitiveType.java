@@ -1,6 +1,7 @@
 package com.aurasoftwareinc.java.challenge1.mapper;
 
 import android.util.Base64;
+import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -13,6 +14,8 @@ import java.lang.reflect.Field;
  * minhle.cse@gmail.com
  */
 public class MappingActionPrimitiveType implements MappingAction {
+
+    private final String TAG = MappingActionPrimitiveType.class.getName();
 
     /**
      * Action to marshal a primitive value from the passing Object
@@ -27,7 +30,7 @@ public class MappingActionPrimitiveType implements MappingAction {
             field.setAccessible(true);
             return field.get(mappingObject);
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         finally {
             field.setAccessible(backupAccessibleValue);
@@ -49,7 +52,7 @@ public class MappingActionPrimitiveType implements MappingAction {
                 return jsonObject.get(fieldName);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         return null;
     }

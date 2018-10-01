@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+apply from: "$project.rootDir/tools/findbugs.gradle"
+apply from: "$project.rootDir/tools/sonarqube.gradle"
+
+def APP_VERSION = "1.0.0"
+ext.set('AppVersion',APP_VERSION)
+
 android {
     compileSdkVersion 27
     defaultConfig {
@@ -26,4 +32,6 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    implementation "com.google.code.findbugs:jsr305:3.0.2"
 }

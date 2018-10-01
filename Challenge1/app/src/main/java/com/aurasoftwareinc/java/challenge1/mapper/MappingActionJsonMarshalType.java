@@ -1,5 +1,7 @@
 package com.aurasoftwareinc.java.challenge1.mapper;
 
+import android.util.Log;
+
 import com.aurasoftwareinc.java.challenge1.JsonMarshalInterface;
 
 import org.json.JSONException;
@@ -13,6 +15,8 @@ import java.lang.reflect.Field;
  * minhle.cse@gmail.com
  */
 public class MappingActionJsonMarshalType implements MappingAction {
+
+    private final String TAG = MappingActionJsonMarshalType.class.getName();
 
     /**
      * Action to recursively marshal a JsonMarshalInterface value to a relevant value accepted by JSONObject
@@ -32,7 +36,7 @@ public class MappingActionJsonMarshalType implements MappingAction {
                 return marshalInterfaceObject.marshalJSON();
             }
         }catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         finally {
             field.setAccessible(backupAccessibleValue);
@@ -58,11 +62,11 @@ public class MappingActionJsonMarshalType implements MappingAction {
                 return jsonMarshalInterfaceObject;
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         } catch (InstantiationException e) {
-            e.printStackTrace();
+            Log.d(TAG,e.getLocalizedMessage());
         }
         return null;
     }
