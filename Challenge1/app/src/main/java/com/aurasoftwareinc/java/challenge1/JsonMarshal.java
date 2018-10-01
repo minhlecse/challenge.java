@@ -18,6 +18,7 @@ import java.util.List;
 
 public class JsonMarshal
 {
+    private static final String TAG = JsonMarshal.class.getName();
     public static final List<? extends Class<? extends Serializable>> PRIM_TYPES = Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class, boolean.class, byte[].class);
 
     public static final List<? extends Class<? extends Serializable>> PRIM_OBJ_TYPES = Arrays.asList(Byte.class, Short.class, Integer.class, Long.class, Float.class,
@@ -39,47 +40,26 @@ public class JsonMarshal
                     object.getClass().getDeclaredFields()) {
 
                 Log.d("mtest","Field " + field.getName() + " type " + field.getGenericType() + "  " + JSONTypes.class.getGenericSuperclass());
+                Field f = object.getClass().getDeclaredField(field.getName());
+                f.setAccessible(true);
                 if(byte[].class == field.getType()){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
                     byte[] byteValue = (byte[]) f.get(object);
                     json.put(field.getName(), Base64.encodeToString(byteValue,Base64.DEFAULT));
-                } else if(PRIM_TYPES.contains(field.getType())){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
-                    json.put(field.getName(),f.get(object));
                 } else if(Byte[].class == field.getType()){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
                     Byte[] byteValue = (Byte[]) f.get(object);
                     json.put(field.getName(), Base64.encodeToString(convertByteArrayObjectToByteArray(byteValue),Base64.DEFAULT));
-                } else if(PRIM_OBJ_TYPES.contains(field.getType())){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
+                } else if(PRIM_TYPES.contains(field.getType()) || PRIM_OBJ_TYPES.contains(field.getType()) || JSONObject.class == field.getType() || JSONArray.class == field.getType()){
                     json.put(field.getName(),f.get(object));
-                }
-                else if(JSONObject.class == field.getType()){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
-                    JSONObject jsonObject = (JSONObject)f.get(object);
-                    json.put(field.getName(),jsonObject);
-
-                } else if(JSONArray.class == field.getType()){
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
-                    JSONArray jsonArray = (JSONArray)f.get(object);
-                    json.put(field.getName(),jsonArray);
-                }else if(JsonMarshalInterface.class.isAssignableFrom(field.getType())){
-                    Log.d("mtest","mm ObjectTypes TYPE");
-                    Field f = object.getClass().getDeclaredField(field.getName());
-                    f.setAccessible(true);
+                } else if(JsonMarshalInterface.class.isAssignableFrom(field.getType())){
                     JsonMarshalInterface marshalInterfaceObject = (JsonMarshalInterface) f.get(object);
+                    //Recursive until get ready json
                     json.put(field.getName(),marshalInterfaceObject.marshalJSON());
                 }
             }
         }
         catch (Exception ignore)
         {
+            Log.d(TAG,ignore.getLocalizedMessage());
         }
 
         return json;
@@ -103,48 +83,24 @@ public class JsonMarshal
                         Log.d("mtst", "umarshall  PRIM_TYPES");
                         field.setAccessible(true);
                         field.set(object,obj);
-                    } else if(PRIM_OBJ_TYPES.contains(field.getType())){
-                        Log.d("mtst", "umarshall  PRIM_OBJ_TYPES");
-                        field.setAccessible(true);
-                        field.set(object,obj);
-                    }
-                    else if(JSONObject.class == field.getType()){
+                    } else if(JSONObject.class == field.getType() || field.getType() == JSONArray.class || PRIM_OBJ_TYPES.contains(field.getType())){
                         Log.d("mtst", "umarshall  JSONObject");
                         field.setAccessible(true);
-                        JSONObject jsonObject = (JSONObject) obj;
-                        field.set(object,jsonObject);
-                    } else if(field.getType() == JSONArray.class){
-                        Log.d("mtst", "umarshall  JSONArray");
-                        field.setAccessible(true);
-                        JSONArray jsonArray = (JSONArray) obj;
-                        field.set(object,jsonArray);
-                    } else if(field.getType() == JSONTypes.class){
-                        Log.d("mtst", "umarshall  JSONType");
+                        field.set(object,field.getType().cast(obj));
+                    } else if(JsonMarshalInterface.class.isAssignableFrom(field.getType())) {
                         field.setAccessible(true);
                         JSONObject jsonObject = (JSONObject) obj;
-                        JSONTypes jsonTypes = new JSONTypes();
-                        jsonTypes.unmarshalJSON(jsonObject);
-                        field.set(object,jsonTypes);
-                    } else if(field.getType() == PrimitiveTypes.class){
-                        Log.d("mtst", "umarshall  PrimitiveTypes");
-                        field.setAccessible(true);
-                        JSONObject jsonObject = (JSONObject) obj;
-                        PrimitiveTypes primitiveTypes = new PrimitiveTypes();
-                        primitiveTypes.unmarshalJSON(jsonObject);
-                        field.set(object,primitiveTypes);
-                    } else if(field.getType() == ObjectTypes.class){
-                        Log.d("mtst", "umarshall  PrimitiveTypes");
-                        field.setAccessible(true);
-                        JSONObject jsonObject = (JSONObject) obj;
-                        ObjectTypes objectTypes = new ObjectTypes();
-                        objectTypes.unmarshalJSON(jsonObject);
-                        field.set(object,objectTypes);
+                        JsonMarshalInterface jsonMarshalInterfaceObject = (JsonMarshalInterface) field.getType().newInstance();
+                        jsonMarshalInterfaceObject.unmarshalJSON(jsonObject);
+                        field.set(object,jsonMarshalInterfaceObject);
                     }
                 }
                 field.setAccessible(backupAccessibleValue);
             } catch (JSONException e) {
                 Log.d("mtest",e.getLocalizedMessage());
             } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
                 e.printStackTrace();
             }
 
