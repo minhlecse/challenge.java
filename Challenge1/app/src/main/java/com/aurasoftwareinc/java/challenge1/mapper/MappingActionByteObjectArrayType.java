@@ -13,9 +13,9 @@ import java.lang.reflect.Field;
  * demo Ltd
  * minhle.cse@gmail.com
  */
-public class MappingActionByteObjectArray implements MappingAction {
+public class MappingActionByteObjectArrayType implements MappingAction {
 
-    private final String TAG = MappingActionByteObjectArray.class.getName();
+    private final String TAG = MappingActionByteObjectArrayType.class.getName();
 
     /**
      * Action to marshal a Byte[] value to a Base64String which accepted by JSONObject
